@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>108課綱學測英文模擬App</title>
+    <!-- 引入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 引入 Babel 用於解析 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body { font-family: 'Roboto', 'Noto Sans TC', sans-serif; }
+        .font-serif { font-family: 'Merriweather', serif; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-indigo-50 h-screen w-full flex justify-center items-center overflow-hidden">
+    <div id="root" class="w-full max-w-3xl h-full bg-white shadow-2xl relative"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // -----------------------------------------------------------------------------
+        // 0. 內建圖標元件
+        // -----------------------------------------------------------------------------
+        const Icons = {
+            BookOpen: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            CheckCircle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            XCircle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>,
+            ChevronRight: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>,
+            ChevronLeft: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m15 18-6-6 6-6"/></svg>,
+            RotateCcw: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
+            Home: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+            Award: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>,
+            Grid: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
+            Flag: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>,
+            Zap: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            Globe: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+            Tag: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94 .94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>
+        };
+
+        const { BookOpen, CheckCircle, XCircle, ChevronRight, ChevronLeft, RotateCcw, Home, Award, Grid, Flag, Zap, Globe, Tag } = Icons;
+
+        // -----------------------------------------------------------------------------
+        // 1. 真實題庫範例 (Real English Questions)
+        // -----------------------------------------------------------------------------
+        const REAL_QUESTION_EXAMPLES = [
+            {
+                id: 'real_en_1',
+                type: 'single',
+                category: 'Vocabulary',
+                text: 'The politician’s speech was so ______ that many voters were left confused about his actual stance on the issue.',
+                options: [
+                    'ambiguous',
+                    'eloquent',
+                    'transparent',
+                    'monotonous'
+                ],
+                correctAnswer: [0],
+                explanation: 'The key context is "voters were left confused". (A) ambiguous means unclear or open to more than one interpretation. (B) eloquent means fluent/persuasive. (C) transparent means clear. (D) monotonous means boring/lacking variation.',
+                difficulty: 'Medium'
+            },
+            {
+                id: 'real_en_2',
+                type: 'single',
+                category: 'Grammar (Cloze)',
+                text: 'Choose the correct answer to fill in the blank:\nHad she known about the heavy traffic, she ______ earlier.',
+                options: [
+                    'would leave',
+                    'will leave',
+                    'would have left',
+                    'had left'
+                ],
+                correctAnswer: [2],
+                explanation: 'This is a Third Conditional sentence (past unreal condition). The pattern is "Had + S + p.p." (If + S + had + p.p.), result clause uses "would have + p.p.". Correct answer is (C).',
+                difficulty: 'Hard'
+            },
+            {
+                id: 'real_en_3',
+                type: 'group',
+                category: 'Reading',
+                passageTitle: 'The Microplastics Problem',
+                passageContent: `Microplastics are tiny plastic particles less than five millimeters in diameter. They come from various sources, including the breakdown of larger plastic debris and microbeads used in personal care products. These particles have been found in the deepest parts of the ocean and even in the ice of the Arctic. Marine animals often mistake microplastics for food, leading to physical harm and the accumulation of toxic chemicals in their bodies. Ultimately, these toxins can move up the food chain and potentially affect human health.`,
+                questions: [
+                    {
+                        id: 'real_en_3_1',
+                        type: 'single',
+                        text: 'What is the main idea of this passage?',
+                        options: [
+                            'How to manufacture plastic products safely.',
+                            'The benefits of using microbeads in cosmetics.',
+                            'The pervasive nature and potential dangers of microplastics.',
+                            'The diet of marine animals in the Arctic.'
+                        ],
+                        correctAnswer: [2],
+                        explanation: 'The passage discusses what microplastics are, where they are found (everywhere), and the harm they cause to animals and humans. (C) captures this best.'
+                    },
+                    {
+                        id: 'real_en_3_2',
+                        type: 'single',
+                        text: 'According to the passage, why are microplastics dangerous to marine life?',
+                        options: [
+                            'They block sunlight from reaching the ocean floor.',
+                            'They are often ingested as food.',
+                            'They cause the ocean temperature to rise.',
+                            'They are larger than five millimeters.'
+                        ],
+                        correctAnswer: [1],
+                        explanation: 'The text states: "Marine animals often mistake microplastics for food".'
+                    }
+                ]
+            }
+        ];
+
+        // -----------------------------------------------------------------------------
+        // 2. 擴充版英文題庫資料庫 (Expanded Database)
+        // -----------------------------------------------------------------------------
+
+        // 單字庫 (Vocabulary) - High Frequency words for GSAT
+        const VOCAB_LIST = [
+            { word: 'inevitable', def: 'certain to happen; unavoidable', syn: 'unavoidable', context: 'With the dark clouds gathering, rain seemed ______.' },
+            { word: 'comprehensive', def: 'complete; including all or nearly all elements', syn: 'thorough', context: 'The report provides a ______ review of the current situation.' },
+            { word: 'vulnerable', def: 'susceptible to physical or emotional attack or harm', syn: 'at risk', context: 'Children and the elderly are most ______ to the flu virus.' },
+            { word: 'reluctant', def: 'unwilling and hesitant', syn: 'unwilling', context: 'She was ______ to admit her mistake in front of the class.' },
+            { word: 'substantial', def: 'of considerable importance, size, or worth', syn: 'significant', context: 'The company made a ______ profit this year.' },
+            { word: 'deteriorate', def: 'become progressively worse', syn: 'worsen', context: 'Without proper care, the patient’s condition began to ______.' },
+            { word: 'distinguish', def: 'recognize or treat as different', syn: 'differentiate', context: 'It is sometimes difficult to ______ between identical twins.' },
+            { word: 'emphasize', def: 'give special importance or prominence to', syn: 'highlight', context: 'The teacher used bold text to ______ the key points.' },
+            { word: 'flexible', def: 'capable of bending easily without breaking', syn: 'adaptable', context: 'Our schedule is ______, so we can meet whenever you are free.' },
+            { word: 'hostile', def: 'unfriendly; antagonistic', syn: 'unfriendly', context: 'The enemy forces were ______ and refused to negotiate.' },
+            { word: 'indispensable', def: 'absolutely necessary', syn: 'essential', context: 'Smartphones have become an ______ part of modern life.' },
+            { word: 'neglect', def: 'fail to care for properly', syn: 'ignore', context: 'If you ______ your plants, they will eventually die.' },
+            { word: 'prohibit', def: 'formally forbid something by law', syn: 'ban', context: 'Smoking is strictly ______ inside the building.' },
+            { word: 'remedy', def: 'a means of counteracting or eliminating something undesirable', syn: 'cure', context: 'There is no simple ______ for unemployment.' },
+            { word: 'superficial', def: 'existing or occurring at or on the surface', syn: 'shallow', context: 'He only has a ______ knowledge of the subject.' }
+        ];
+
+        // 文法與轉折詞庫 (Grammar & Transitions)
+        const GRAMMAR_POINTS = [
+            { type: 'Transition', q: 'The team worked hard; ______, they didn\'t win the game.', ans: 'however', opts: ['therefore', 'furthermore', 'similarly'] },
+            { type: 'Transition', q: 'It was raining heavily. ______, we decided to stay indoors.', ans: 'Consequently', opts: ['However', 'Nevertheless', 'On the contrary'] },
+            { type: 'Preposition', q: 'She is responsible ______ managing the entire project.', ans: 'for', opts: ['of', 'to', 'with'] },
+            { type: 'Preposition', q: 'He was accused ______ stealing the money.', ans: 'of', opts: ['for', 'with', 'about'] },
+            { type: 'Tense', q: 'By the time we arrived, the movie ______ already ______.', ans: 'had / started', opts: ['has / started', 'was / starting', 'would / start'] },
+            { type: 'Clause', q: 'The book ______ I borrowed from the library is fascinating.', ans: 'which', opts: ['who', 'where', 'what'] },
+            { type: 'Verb Pattern', q: 'I look forward to ______ you soon.', ans: 'seeing', opts: ['see', 'saw', 'have seen'] },
+            { type: 'Conjunction', q: '______ it was cold, he went out without a coat.', ans: 'Although', opts: ['Despite', 'Because', 'Since'] },
+            { type: 'Participle', q: '______ by the noise, the baby woke up crying.', ans: 'Frightened', opts: ['Frightening', 'Frighten', 'To frighten'] },
+            { type: 'Inversion', q: 'Never ______ such a beautiful sunset.', ans: 'have I seen', opts: ['I have seen', 'did I saw', 'I saw'] }
+        ];
+
+        // 閱讀測驗主題庫 (Reading Topics)
+        const READING_TOPICS = [
+            { title: 'Artificial Intelligence', content: 'AI is transforming industries by automating tasks. However, it also raises ethical concerns regarding privacy and job displacement.' },
+            { title: 'Climate Change', content: 'Global warming is causing sea levels to rise. Urgent action is required to reduce carbon footprints and switch to renewable energy.' },
+            { title: 'Mental Health', content: 'Mental well-being is as important as physical health. Stress and anxiety are becoming common issues in modern society.' },
+            { title: 'Space Exploration', content: 'Private companies are joining the race to space. The goal is not just exploration but potential colonization of Mars.' },
+            { title: 'Cultural Diversity', content: 'Globalization brings cultures closer. Appreciating different traditions fosters mutual respect and reduces conflict.' }
+        ];
+
+        // -----------------------------------------------------------------------------
+        // Helper: Fisher-Yates Shuffle
+        // -----------------------------------------------------------------------------
+        const fisherYatesShuffle = (array) => {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        };
+
+        // -----------------------------------------------------------------------------
+        // Generator Logic
+        // -----------------------------------------------------------------------------
+        const generateEnglishMock = (type, itemIndex, variantCount) => {
+            const shuffle = (arr) => [...arr].sort(() => 0.5 - Math.random());
+            const isReview = variantCount > 0;
+            const reviewLabel = isReview ? '【Review】' : '';
+
+            if (type === 'vocabulary') {
+                const item = VOCAB_LIST[itemIndex % VOCAB_LIST.length];
+                const distractors = shuffle(VOCAB_LIST.filter(v => v.word !== item.word)).slice(0, 3).map(v => v.word);
+                
+                // Variant logic: Definition vs Sentence context
+                if (variantCount % 2 === 0) {
+                    return {
+                        category: 'Vocabulary',
+                        text: `${reviewLabel} Fill in the blank:\n"${item.context}"`,
+                        options: [item.word, ...distractors],
+                        explanation: `"${item.word}" means ${item.def}. It fits the context best.`,
+                        correctIndex: 0,
+                        isReview
+                    };
+                } else {
+                    return {
+                        category: 'Vocabulary (Definition)',
+                        text: `${reviewLabel} Which word matches the definition:\n"${item.def}"?`,
+                        options: [item.word, ...distractors],
+                        explanation: `"${item.word}" is defined as ${item.def}.`,
+                        correctIndex: 0,
+                        isReview
+                    };
+                }
+
+            } else if (type === 'grammar') {
+                const item = GRAMMAR_POINTS[itemIndex % GRAMMAR_POINTS.length];
+                return {
+                    category: `Grammar (${item.type})`,
+                    text: `${reviewLabel} ${item.q}`,
+                    options: [item.ans, ...item.opts],
+                    explanation: `Correct usage: "${item.ans}".`,
+                    correctIndex: 0,
+                    isReview
+                };
+
+            } else { // Reading
+                const topic = READING_TOPICS[itemIndex % READING_TOPICS.length];
+                const qType = variantCount % 2; // 0: Main Idea, 1: Detail (simulated)
+                
+                let qText, opts, ansIdx, exp;
+                
+                if (qType === 0) {
+                    qText = "What is the main idea of the passage?";
+                    opts = [
+                        `The impact of ${topic.title}.`,
+                        `The history of ${topic.title}.`,
+                        `Why ${topic.title} is dangerous.`,
+                        `The cost of ${topic.title}.`
+                    ];
+                    ansIdx = 0;
+                    exp = "The passage broadly discusses the impact and significance of the topic.";
+                } else {
+                    qText = "Which of the following is implied in the text?";
+                    opts = [
+                        "It presents both opportunities and challenges.",
+                        "It suggests that we should stop progress.",
+                        "It focuses only on the negative aspects.",
+                        "It is irrelevant to modern society."
+                    ];
+                    ansIdx = 0;
+                    exp = "The text mentions both benefits (or facts) and concerns/actions, implying a balanced view.";
+                }
+
+                return {
+                    category: 'Reading Comprehension',
+                    text: `${reviewLabel} Read the passage:\n"${topic.content}"\n\n${qText}`,
+                    options: opts,
+                    explanation: exp,
+                    correctIndex: ansIdx,
+                    isReview
+                };
+            }
+        };
+
+        const generateMockQuestions = (startId, count) => {
+            const mocks = [];
+            const types = ['vocabulary', 'grammar', 'reading'];
+            let taskPool = [];
+            
+            const typeDataCounts = {
+                'vocabulary': VOCAB_LIST.length,
+                'grammar': GRAMMAR_POINTS.length,
+                'reading': READING_TOPICS.length
+            };
+
+            let totalBaseItems = 0;
+            for(let k in typeDataCounts) totalBaseItems += typeDataCounts[k];
+            
+            const loopsNeeded = Math.ceil(count / totalBaseItems) + 1;
+
+            for (let loop = 0; loop < loopsNeeded; loop++) {
+                types.forEach(type => {
+                    const maxIdx = typeDataCounts[type];
+                    for (let i = 0; i < maxIdx; i++) {
+                        taskPool.push({ type, itemIndex: i, variantCount: loop });
+                    }
+                });
+            }
+
+            taskPool = fisherYatesShuffle(taskPool);
+            const selectedTasks = taskPool.slice(0, count);
+
+            selectedTasks.forEach((task, i) => {
+                const content = generateEnglishMock(task.type, task.itemIndex, task.variantCount);
+                
+                let finalOptions = content.options.map((text, idx) => ({ 
+                    text, 
+                    isCorrect: idx === content.correctIndex 
+                }));
+                finalOptions = fisherYatesShuffle(finalOptions);
+                
+                let correctIndices = [];
+                finalOptions.forEach((opt, idx) => {
+                    if (opt.isCorrect) correctIndices.push(idx);
+                });
+
+                const answerLabels = correctIndices.map(idx => String.fromCharCode(65 + idx)).join(', ');
+
+                mocks.push({
+                    id: `mock_en_${startId + i}`,
+                    type: 'single', // Most English questions are single choice
+                    category: content.category,
+                    text: `[Q${startId + i}] ${content.text}`,
+                    options: finalOptions.map(o => o.text),
+                    correctAnswer: correctIndices,
+                    explanation: `${content.explanation} (Answer: ${answerLabels})`,
+                    difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
+                    isReview: content.isReview
+                });
+            });
+            return mocks;
+        };
+
+        // -----------------------------------------------------------------------------
+        // App Logic
+        // -----------------------------------------------------------------------------
+        function EnglishExamApp() {
+            const [currentScreen, setCurrentScreen] = useState('home'); 
+            const [questions, setQuestions] = useState([]);
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [userAnswers, setUserAnswers] = useState({});
+            const [markedQuestions, setMarkedQuestions] = useState(new Set()); 
+            const [showExplanation, setShowExplanation] = useState(false);
+            const [showGrid, setShowGrid] = useState(false); 
+
+            useEffect(() => {
+                let flattened = [];
+                
+                REAL_QUESTION_EXAMPLES.forEach(item => {
+                    if (item.type === 'group') {
+                        item.questions.forEach(q => {
+                            flattened.push({
+                                ...q,
+                                groupTitle: item.passageTitle,
+                                groupContent: item.passageContent,
+                                isGroup: true
+                            });
+                        });
+                    } else {
+                        flattened.push(item);
+                    }
+                });
+
+                const currentCount = flattened.length;
+                const needed = 500 - currentCount;
+                if (needed > 0) {
+                    const mocks = generateMockQuestions(currentCount + 1, needed);
+                    flattened = [...flattened, ...mocks];
+                }
+
+                setQuestions(flattened);
+            }, []);
+
+            const startExam = () => {
+                setCurrentQuestionIndex(0);
+                setUserAnswers({});
+                setMarkedQuestions(new Set());
+                setShowExplanation(false);
+                setShowGrid(false);
+                setCurrentScreen('quiz');
+            };
+
+            const handleAnswerSelect = (optionIndex, isMulti) => {
+                if (showExplanation) return; 
+
+                const currentQ = questions[currentQuestionIndex];
+                const qId = currentQ.id;
+                
+                setUserAnswers(prev => {
+                    return { ...prev, [qId]: [optionIndex] }; // Force single choice behavior for simplicity in this version unless specified
+                });
+
+                if (!isMulti) {
+                    setShowExplanation(true);
+                }
+            };
+
+            const toggleMarkQuestion = () => {
+                const qId = questions[currentQuestionIndex].id;
+                setMarkedQuestions(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(qId)) newSet.delete(qId);
+                    else newSet.add(qId);
+                    return newSet;
+                });
+            };
+
+            const calculateScore = () => {
+                let rawScore = 0;
+                questions.forEach(q => {
+                    const userAns = userAnswers[q.id] || [];
+                    const correctAns = q.correctAnswer;
+                    // Simple array comparison for single choice
+                    if (userAns.length > 0 && userAns[0] === correctAns[0]) {
+                        rawScore++;
+                    }
+                });
+                const percentage = (rawScore / questions.length) * 100;
+                let rank = 0;
+                if (percentage >= 90) rank = 15;
+                else if (percentage >= 85) rank = 14;
+                else if (percentage >= 80) rank = 13;
+                else if (percentage >= 70) rank = 11;
+                else if (percentage >= 60) rank = 9;
+                else rank = Math.floor(percentage / 10) + 1;
+
+                return { rawScore, total: questions.length, rank, percentage };
+            };
+
+            // ---------------------------------------------------------------------------
+            // Views
+            // ---------------------------------------------------------------------------
+
+            const QuestionGrid = ({ closeGrid }) => (
+                <div className="fixed inset-0 bg-black/50 z-50 flex justify-end animate-fade-in">
+                    <div className="w-full max-w-sm bg-white h-full shadow-2xl flex flex-col animate-slide-in-right">
+                        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                            <h3 className="font-bold text-lg text-gray-800 flex items-center font-serif">
+                                <Icons.Grid size={20} className="mr-2"/> Question Navigator
+                            </h3>
+                            <button onClick={closeGrid} className="p-2 hover:bg-gray-200 rounded-full">
+                                <Icons.XCircle size={24} className="text-gray-500"/>
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <div className="grid grid-cols-5 gap-3">
+                                {questions.map((qItem, idx) => {
+                                    const isAnswered = userAnswers[qItem.id] && userAnswers[qItem.id].length > 0;
+                                    const isMarkedItem = markedQuestions.has(qItem.id);
+                                    const isCurrent = currentQuestionIndex === idx;
+                                    let btnClass = "h-10 w-10 rounded-lg flex items-center justify-center text-sm font-medium transition relative font-serif ";
+                                    if (isCurrent) btnClass += "ring-2 ring-indigo-600 ring-offset-2 bg-indigo-100 text-indigo-800 font-bold ";
+                                    else if (isAnswered) btnClass += "bg-indigo-600 text-white shadow-sm ";
+                                    else btnClass += "bg-indigo-50 text-gray-500 hover:bg-indigo-100 ";
+
+                                    return (
+                                        <button 
+                                            key={qItem.id} 
+                                            onClick={() => { setCurrentQuestionIndex(idx); setShowExplanation(false); closeGrid(); }}
+                                            className={btnClass}
+                                        >
+                                            {idx + 1}
+                                            {isMarkedItem && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            if (currentScreen === 'home') return (
+                <div className="flex flex-col items-center justify-center h-full p-6 space-y-8 animate-fade-in bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <div className="text-center space-y-4 max-w-lg">
+                        <div className="bg-indigo-600 p-6 rounded-full inline-block mb-2 shadow-xl">
+                            <Icons.Globe size={64} className="text-white" />
+                        </div>
+                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight font-serif">GSAT English Prep</h1>
+                        <p className="text-xl text-gray-600 font-medium">Vocabulary • Grammar • Reading</p>
+                        <div className="flex flex-wrap justify-center gap-2 mt-4">
+                           <span className="px-3 py-1 bg-white border border-indigo-200 rounded-full text-sm text-indigo-600">500 Questions</span>
+                           <span className="px-3 py-1 bg-white border border-indigo-200 rounded-full text-sm text-indigo-600">Instant Feedback</span>
+                           <span className="px-3 py-1 bg-white border border-indigo-200 rounded-full text-sm text-indigo-600">Smart Shuffle</span>
+                        </div>
+                    </div>
+                    <div className="w-full max-w-sm">
+                        <button 
+                            onClick={startExam}
+                            className="w-full flex items-center justify-center p-5 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition transform hover:-translate-y-1 group"
+                        >
+                            <div className="bg-white/20 p-2 rounded-full mr-3 group-hover:scale-110 transition">
+                                <Icons.Zap size={24} className="text-white" />
+                            </div>
+                            <div className="text-left">
+                                <span className="block font-bold text-xl">Start Practice</span>
+                                <span className="text-sm text-indigo-200">Simulated Exam</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            );
+
+            if (currentScreen === 'result') {
+                const { rawScore, total, rank, percentage } = calculateScore();
+                return (
+                    <div className="flex flex-col items-center h-full bg-indigo-50 p-6 overflow-y-auto">
+                        <div className="w-full max-w-md space-y-6 mt-8">
+                            <div className="bg-white rounded-3xl shadow-xl p-8 text-center relative overflow-hidden">
+                                <h2 className="text-3xl font-extrabold text-gray-800 mb-2">Result</h2>
+                                <div className="flex justify-center my-8">
+                                    <div className="text-6xl font-black text-indigo-600">{percentage.toFixed(0)}<span className="text-2xl text-gray-400 font-normal">%</span></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-left">
+                                    <div className="bg-indigo-50 p-4 rounded-2xl">
+                                        <p className="text-xs text-indigo-500 font-bold mb-1">Score</p>
+                                        <p className="text-2xl font-bold text-indigo-800">{rawScore} / {total}</p>
+                                    </div>
+                                    <div className="bg-indigo-50 p-4 rounded-2xl">
+                                        <p className="text-xs text-indigo-500 font-bold mb-1">Rank Level</p>
+                                        <p className="text-2xl font-bold text-indigo-800">{rank}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <button onClick={() => setCurrentScreen('home')} className="w-full bg-indigo-800 hover:bg-indigo-900 text-white py-4 rounded-2xl font-bold shadow-lg transition flex items-center justify-center space-x-2">
+                                    <Icons.RotateCcw size={20} /> <span>Try Again</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // 確保有題目才渲染
+            if (!q) return <div className="flex items-center justify-center h-full text-xl font-serif text-gray-500">Loading Exam...</div>;
+
+            return (
+                <div className="flex flex-col h-full bg-gray-50 relative font-sans">
+                    {showGrid && <QuestionGrid closeGrid={() => setShowGrid(false)} />}
+                    
+                    <div className="bg-white shadow-sm px-4 py-3 flex justify-between items-center sticky top-0 z-10 border-b border-gray-200">
+                        <div className="flex items-center space-x-3">
+                            <button onClick={() => setCurrentScreen('home')} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+                                <Icons.Home size={20} />
+                            </button>
+                            <button onClick={() => setShowGrid(true)} className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700 font-medium">
+                                <Icons.Grid size={18} />
+                                <span>{currentQuestionIndex + 1} / {questions.length}</span>
+                            </button>
+                        </div>
+                        <button onClick={toggleMarkQuestion} className={`p-2 rounded-lg transition ${isMarked ? 'bg-red-100 text-red-500' : 'text-gray-400 hover:bg-gray-100'}`}>
+                            <Icons.Flag size={20} fill={isMarked ? "currentColor" : "none"} />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-4xl mx-auto w-full scroll-smooth">
+                        {q.isGroup && (
+                            <div className="bg-indigo-50 rounded-xl p-6 mb-6 shadow-sm border-l-4 border-indigo-600">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="font-bold text-lg text-indigo-900">{q.groupTitle}</h3>
+                                    <span className="text-xs bg-indigo-200 text-indigo-800 px-2 py-1 rounded">Passage</span>
+                                </div>
+                                <div className="prose prose-indigo max-w-none text-gray-800 leading-relaxed text-base">
+                                    {q.groupContent}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-white rounded-xl p-6 shadow-sm ring-1 ring-gray-200">
+                            <div className="flex items-center space-x-2 mb-4">
+                                <span className={`text-xs font-bold px-2 py-1 rounded bg-indigo-100 text-indigo-800`}>
+                                    Multiple Choice
+                                </span>
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200">
+                                    {q.category}
+                                </span>
+                                {q.isReview && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200 flex items-center animate-pulse"><Icons.Tag size={12} className="mr-1" /> Review</span>}
+                            </div>
+
+                            <h2 className="text-xl font-medium text-gray-900 mb-8 leading-relaxed whitespace-pre-wrap">
+                                {q.text}
+                            </h2>
+
+                            <div className="space-y-4">
+                                {q.options.map((option, idx) => {
+                                    const isSelected = currentAns.includes(idx);
+                                    let btnClass = "w-full text-left p-4 rounded-xl border transition-all flex items-start space-x-4 relative overflow-hidden ";
+                                    if (showExplanation) {
+                                        if (q.correctAnswer.includes(idx)) btnClass += "border-green-600 bg-green-50 text-green-900";
+                                        else if (isSelected) btnClass += "border-red-500 bg-red-50 text-red-900";
+                                        else btnClass += "border-gray-200 text-gray-400 opacity-60";
+                                    } else {
+                                        if (isSelected) btnClass += "border-indigo-600 bg-indigo-50 text-indigo-900 shadow-md";
+                                        else btnClass += "border-gray-200 hover:border-indigo-400 hover:bg-gray-50 text-gray-700";
+                                    }
+
+                                    return (
+                                        <button key={idx} onClick={() => handleAnswerSelect(idx, false)} className={btnClass} disabled={showExplanation}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold border transition-colors ${
+                                                isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300 text-gray-500'
+                                            } ${showExplanation && q.correctAnswer.includes(idx) ? '!bg-green-600 !border-green-600 !text-white' : ''}`}>
+                                                {String.fromCharCode(65 + idx)}
+                                            </div>
+                                            <span className="pt-1 text-lg">{option}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {showExplanation && (
+                                <div className="mt-8 bg-blue-50 p-5 rounded-xl border border-blue-100 animate-fade-in-up">
+                                    <div className="flex items-center space-x-2 text-blue-900 font-bold mb-3">
+                                        <Icons.Award size={20} />
+                                        <span>Explanation</span>
+                                    </div>
+                                    <p className="text-blue-900 leading-relaxed">{q.explanation}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white border-t border-gray-200 p-4 flex justify-between items-center safe-area-bottom">
+                        <button 
+                            onClick={() => { setShowExplanation(false); setCurrentQuestionIndex(prev => Math.max(0, prev - 1)); }}
+                            disabled={currentQuestionIndex === 0}
+                            className="flex items-center space-x-2 px-4 py-2 rounded-full text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition"
+                        >
+                            <Icons.ChevronLeft size={20} /> <span>Previous</span>
+                        </button>
+                        
+                        <button 
+                            onClick={() => {
+                                if (currentQuestionIndex < questions.length - 1) { setShowExplanation(false); setCurrentQuestionIndex(prev => prev + 1); } 
+                                else { setCurrentScreen('result'); setShowGrid(false); }
+                            }}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2.5 rounded-full font-bold shadow-md flex items-center transition"
+                        >
+                            {currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'} <Icons.ChevronRight size={18} className="ml-1"/>
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<EnglishExamApp />);
+    </script>
+</body>
+</html>
